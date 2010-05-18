@@ -1,0 +1,10 @@
+#!/usr/bin/perl
+# game launcher
+
+use Badger
+    lib => '../lib';
+    
+use platformer;
+
+my $game = platformer::new();
+$game->run();
