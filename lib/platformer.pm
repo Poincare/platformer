@@ -1,17 +1,14 @@
 # this package provides the main engine functionality
 
 package platformer;
-use base 'Badger::Base';
-
-
-use Badger::Class
-#    mutators => 'config window clock';
+use Moose;
 
 use SDL;
 use SDL::Video;
 use SDL::Surface;
 use SDL::Audio;
 use SDL::Event;
+use SDL::Events;
 use SDL::Image;
 
 use Cogent::Window;
@@ -26,27 +23,65 @@ use platformer::Level;
 #    },
 #};
     
+has 'window' => (
+    is => 'rw',
+    isa => 'Cogent::Window',
+    default => sub { Cogent::Window->new('x' => 800,
+                                         'y' => 600,
+                                         'bpp' => 32,
+                                         'flags' => SDL_DOUBLEBUF | SDL_SWSURFACE)}
+);
+
+has 'clock' => (
+    is => 'rw',
+    isa => 'SDLx::Clock',
+    default => sub { SDLx::Clock->new }
+);
+
+has 'states' => (
+    is => 'rw',
+    isa => 'HashRef',
+    default => { menu   => platformer::level->new( filename => 'data/levels/menu.dat'   ),
+                 level1 => platformer::level->new( filename => 'data/levels/level1.dat' ) }
+);
+
+has 'current_state' => (
+    is => 'rw',
+    isa => 'platformer::level',
+    default => $self->states->{menu};
+);
+
+has 'event_filter' => (
+    is => 'rw',
+    isa => 'CodeRef',
+    default => sub {
+        my $event = shift;
+        if ($event->type == SDL_QUIT) {
+            exit;
+        }
+        else if ($event->type == SDL_VIDEORESIZE) {
+            # TODO: handle this later
+        }
+    }
+);
+
 sub new {
     my ($self) = @_;
     SDL::init( SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-    $self->{window} = Cogent::Window->new(800, 600, 32, SDL_DOUBLEBUF | SDL_SWSURFACE);
-    $self->{clock} = SDLx::Clock->new();
     
-    $self->{states} = { menu => platformer::Level->new( filename => 'data/levels/menu.dat' ),
-                        level1 => platformer::Level->new(filename => 'data/levels/level1.dat') };
-    
-    
+    SDL::Events::set_event_filter($self->{event_filter});
     
 }
 
+# main loop of the game
 sub run {
     my $self = shift;
     $self->set_state('menu');
     
     $self->{clock}->start;
-    my $prev_time_delta = $self->{clock}->get_ticks();
+    my $prev_time_delta = $self->clock->get_ticks();
     while (1) {
-        my $time_delta = $self->{clock}->get_ticks() - $prev_time_delta;
+        my $time_delta = $self->clock->get_ticks() - $prev_time_delta;
         $self->handle_events();
         $self->update($time_delta);
         $self->{window}->draw();
@@ -57,8 +92,8 @@ sub run {
 # allows the engine to handle common events (e.g. window resizes, quitting the game), and pass off unhandled events to the current state
 sub handle_events() {
     my $self = shift;
-    my $event = SDL::Event->new();
-    
+    my $events = SDL::Event->new();
+    $self->current_state->handle_events($events); 
 }
 
 # runs the main engine logic and the current state's logic with the same update interval, keeping everything in sync
@@ -67,11 +102,7 @@ sub update {
     $self->{current_state}->update($time_delta);
 }
 
-sub set_window {
-    # TODO: Find out how to reinitialize SDL window    
-}
-
-sub get_window {
+sub window {
     my $self = shift;
     return $self->{window};
 }
