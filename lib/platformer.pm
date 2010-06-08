@@ -1,4 +1,4 @@
-# this package provides the main engine functionality
+# this package implements the main game loop and state machine
 
 package platformer;
 use Moose;
@@ -27,9 +27,9 @@ has 'window' => (
     is => 'rw',
     isa => 'Cogent::Window',
     default => sub { Cogent::Window->new('x' => 800,
-                                         'y' => 600,
-                                         'bpp' => 32,
-                                         'flags' => SDL_DOUBLEBUF | SDL_SWSURFACE)}
+                                          'y' => 600,
+                                          'bpp' => 32,
+                                          'flags' => SDL_DOUBLEBUF | SDL_SWSURFACE)}
 );
 
 has 'clock' => (

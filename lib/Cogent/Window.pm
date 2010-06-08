@@ -1,7 +1,7 @@
 package Cogent::Window;
 
-# Badger stuff
-use base 'Badger::Prototype';
+# Moose stuff
+use Moose;
 
 # SDL stuff
 use SDL;
@@ -11,16 +11,27 @@ use SDL::Constants;
 
 # Cogent stuff
 
-sub init {
+
+has 'surface' => {
+    is => 'rw',
+    isa => 'SDL::Surface'
+};
+
+has 'draw_queue' => {
+    is => 'rw',
+    isa => 'ArrayRef',
+    default => ()
+};
+
+sub new {
     my ($self, $config) = @_;
     $self = $self->prototype() unless ref $self;
     $self->{config} = $config;
-    $self->{surface} = SDL::Video::set_video_mode($config->{w},
-                                             $config->{h},
-                                             $config->{bpp},
-                                             $config->{flags});
+    $self->surface( SDL::Video::set_video_mode($config->{w},
+                                                  $config->{h},
+                                                  $config->{bpp},
+                                                  $config->{flags}));
 
-    $self->{draw_queue} = [];
 }
 
 sub draw {
@@ -40,7 +51,7 @@ sub add_drawable {
     push @{$self->{draw_queue}}, $item;
 }
 
-sub get_surface {
+sub surface {
     my $self = shift;
     return $self->{surface};
 }
